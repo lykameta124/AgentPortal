@@ -1,0 +1,125 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+class get_model extends CI_Model{
+    function __construct() {
+		parent::__construct();
+
+    }
+    public function getEmployees()
+    {
+        $this->db->select('e.*, t.*, d.*, ac.*, ar.*, eg.*');
+        $this->db->from('employee e, team t, department d, access_registry ar, access_control ac, employee_group eg');
+        $this->db->where('e.emp_id = eg.emp_id');
+        $this->db->where('eg.department_id = d.department_id');
+        $this->db->where('eg.team_id = t.team_id');
+        $this->db->where('e.emp_id = ar.emp_id');
+        $this->db->where('ar.access_id = ac.access_id');
+        $query = $this->db->get();
+        return $query->result();
+    }
+    public function getEmployeeUnder($id)
+    {
+        $this->db->select('team_id')->from('employee_group')->where('emp_id',$id);
+        $subQuery =  $this->db->get_compiled_select();
+        
+        $this->db->select('emp_id');
+        $this->db->from('employee_group');
+        $this->db ->where("team_id IN ($subQuery)", NULL, FALSE);
+        $subQuery2 =  $this->db->get_compiled_select();
+        
+        $this->db->select('*');
+        $this->db ->from('employee');
+        $this->db ->where("emp_id IN ($subQuery2)", NULL, FALSE);
+        $query = $this->db->get();
+        return $query->result();
+        
+    }
+    function getData($id)
+    {
+        $this->db->select('*')->from('employee')->where('emp_id',$id);
+        $query = $this->db->get();
+        return $query->row();
+    }
+    public function getAccessType()
+    {
+        $this->db->select('*')->from('access_control');
+        $query = $this->db->get();
+        return $query->result();
+    }
+    public function getEmployee(){
+        $this->db->select('*')->from('employee');
+        $query = $this->db->get();
+        return $query->result();
+        }
+    function getDepartment(){
+        $this->db->select("*")->from('department');
+        $query = $this->db->get();
+        return $query->result();
+    }
+    function getTeam(){
+        $this->db->select("*")->from('team');
+        $query = $this->db->get();
+        return $query->result();
+    }
+    function getTicket($name=NULL,$status=NULL,$department=NULL){
+        if($name!=NULL){
+            $this->db->select("*")->from('ticket')->where('requestor',$name);
+        }elseif($status!=NULL){
+            $this->db->select("*")->from('ticket')->where('ticket_status',$status);
+        }elseif($department!=NULL){
+            $this->db->select("*")->from('ticket')->where('department',$department);
+        }elseif($status!=NULL && $department!=NULL){
+             $this->db->select("*")->from('ticket')->where('department',$department)->where('ticket_status',$status);
+        }elseif($name!=NULL && $status!=NULL){
+            $this->db->select("*")->from('ticket')->where('ticket_status',$status)->where('requestor',$name);
+        }elseif($name==NULL && $status==NULL && $department==NULL){
+            $this->db->select("*")->from('ticket');
+        }
+        $query = $this->db->get();
+        return $query->result();
+    }
+    function getSingleTicket($id){
+        $this->db->select("*")->from('ticket')->where('ticket_id',$id);
+        $query = $this->db->get();
+        return $query->row();
+    }
+    function getTicketID(){
+        $this->db->select('ticket_id');
+        $this->db->from('ticket');
+        $this->db->order_by("ticket_id", "desc");
+        $this->db->limit('1');
+        $query = $this->db->get();
+        if($query->num_rows() > 0){
+            return $query->row_array();}else { }
+    }
+    
+    function getPriority()
+    {
+        $query = "SHOW COLUMNS FROM ticket LIKE 'priority'";
+        $row = $this->db->query("SHOW COLUMNS FROM ticket LIKE 'priority'")->row()->Type;
+        $regex = "/'(.*?)'/";
+        preg_match_all( $regex , $row, $enum_array );
+        $enum_fields = $enum_array[1];
+        foreach ($enum_fields as $key=>$value)
+        {
+            $enums[$value] = $value; 
+        }
+        return $enums;
+    } 
+
+    public function getSingleEmployee($id)
+    {
+        $this->db->select('e.*, t.*, d.*, ac.*, ar.*, eg.*');
+        $this->db->from('employee e, team t, department d, access_registry ar, access_control ac, employee_group eg');
+        $this->db->where('e.emp_id', $id);
+        $this->db->where('e.emp_id = eg.emp_id');
+        $this->db->where('eg.department_id = d.department_id');
+        $this->db->where('eg.team_id = t.team_id');
+        $this->db->where('e.emp_id = ar.emp_id');
+        $this->db->where('ar.access_id = ac.access_id');
+        $query = $this->db->get();
+        if($query->num_rows() > 0){
+            return $query->result();
+        }else{}
+        
+    }
+}
